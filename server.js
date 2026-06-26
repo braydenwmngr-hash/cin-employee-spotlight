@@ -2,163 +2,175 @@ require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+const server = http.createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(server);
+
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret';
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'changeme';
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
 
-const clients = new Set();
-
-app.use(express.json({ limit: '10mb' }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/api/login', rateLimit({ windowMs: 60 * 1000, max: 8 }));
-
 const starterData = {
   brand: {
     location: 'Texas',
-    dashboardTitle: 'Employee Spotlight',
-    subtitle: 'MAGICAL Values • Team Updates • Shift Readiness'
+    subtitle: 'Employee Spotlight + Team Command Center',
+    backgroundVideo: '',
+    backgroundImage: ''
   },
+  ticker: [
+    'Guest First energy all day.',
+    'Recover fast. Communicate faster.',
+    'LTO knowledge check before shift.',
+    'Celebrate wins. Coach the gaps.'
+  ],
   employee: {
     month: 'July 2026',
     name: 'Employee Name',
     role: 'Games & Attractions',
-    department: 'Games',
     photo: '',
     quote: 'Guest First. Accountable. A Leader.',
-    stats: [
-      { label: 'Guest Compliments', value: '12' },
-      { label: 'Shifts Covered', value: '5' },
-      { label: 'Training Assists', value: '3' }
-    ],
-    highlights: [
-      'Crushed guest service scores during peak weekends',
-      'Helped train new team members with confidence',
-      'Kept the floor clean, recovered, and guest-ready'
+    achievements: [
+      'Crushed guest service scores',
+      'Helped train new team members',
+      'Kept the floor moving during busy weekends'
     ]
   },
-  ticker: [
-    'Clean area • Fast recovery • Positive energy • Guest-first service',
-    'Managers: update LTO notes before pre-shift huddles',
-    'Celebrate wins and shout out teammates who live the MAGICAL values'
+  ltos: [
+    { title: 'Limited Time Offer', label: 'LTO', detail: 'Add offer details, date range, talking points, and upsell notes.', image: '', active: true },
+    { title: 'Featured Combo', label: 'Food & Beverage', detail: 'Highlight the item the team should promote this week.', image: '', active: true }
   ],
-  announcements: [
-    { type: 'LTO', title: 'New Limited Time Offer', body: 'Add the newest LTO details here so the team sees it before shift.', priority: 'high', active: true },
-    { type: 'New Item', title: 'New Prize / Menu Item', body: 'Post item details, talking points, location, and launch date.', priority: 'medium', active: true },
-    { type: 'Process', title: 'New Way of Doing Things', body: 'Explain the updated process clearly with the top 2–3 steps.', priority: 'medium', active: true },
-    { type: 'Reminder', title: 'Daily Floor Standard', body: 'Check trash, wipe counters, recover prizes, and keep guest paths clear.', priority: 'low', active: true }
+  whatsNew: [
+    { type: 'Menu', title: 'New Item Launch', body: 'Explain the new item, what it includes, and how to describe it to guests.' },
+    { type: 'Attractions', title: 'Updated Attraction Flow', body: 'Add the top 2–3 process steps for the team.' },
+    { type: 'Operations', title: 'New Way of Doing Things', body: 'Keep this short, clear, and shift-ready.' }
   ],
-  shoutouts: [
-    { name: 'Team Member', text: 'Jumped in without being asked and helped reset the floor.' },
-    { name: 'Team Member', text: 'Handled a guest issue calmly and professionally.' }
+  birthdays: [
+    { name: 'Team Member', date: 'Jul 18', type: 'Birthday' },
+    { name: 'Team Member', date: 'Jul 22', type: 'Work Anniversary' }
   ],
   events: [
-    { date: 'This Week', title: 'Team Huddle', time: 'Before peak shift' },
-    { date: 'Friday', title: 'LTO Reminder', time: 'All day' },
-    { date: 'Weekend', title: 'High Traffic Prep', time: 'Open–Close' }
+    { date: 'Jul 12', time: '4:00 PM', title: 'Weekend Huddle', location: 'Games Desk' },
+    { date: 'Jul 18', time: '6:00 PM', title: 'LTO Push Night', location: 'Floor' }
   ],
-  values: [
-    { letter: 'M', word: 'Motivated', note: 'Bring energy every shift.' },
-    { letter: 'A', word: 'Accountable', note: 'Own your area and follow through.' },
-    { letter: 'G', word: 'Guest First', note: 'Make every interaction count.' },
-    { letter: 'I', word: 'Informed', note: 'Know the specials, rules, and updates.' },
-    { letter: 'C', word: 'Committed', note: 'Protect the standard even when busy.' },
-    { letter: 'AL', word: 'A Leader', note: 'Set the tone for the team.' }
+  shoutouts: [
+    { from: 'Manager', to: 'Team Member', body: 'Great recovery and guest-first attitude during a busy rush.' },
+    { from: 'Guest Compliment', to: 'Team', body: 'The team made the birthday party feel easy and fun.' }
   ],
-  settings: {
-    refreshSeconds: 20,
-    theme: 'cinergy-neon'
-  },
-  updatedAt: new Date().toISOString()
+  values: ['Motivated', 'Accountable', 'Guest First', 'Informed', 'Committed', 'A Leader']
 };
 
+app.use(express.json({ limit: '6mb' }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api/login', rateLimit({ windowMs: 60 * 1000, max: 12 }));
+
 function ensureDataFile() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(starterData, null, 2));
-  }
+  if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify(starterData, null, 2));
 }
 
 function readData() {
   ensureDataFile();
-  try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  } catch (error) {
-    return { ...starterData, readError: 'Data file could not be parsed.' };
-  }
+  return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
 }
 
 function writeData(data) {
-  const next = { ...data, updatedAt: new Date().toISOString() };
-  fs.writeFileSync(DATA_FILE, JSON.stringify(next, null, 2));
-  broadcast(next);
-  return next;
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
-function broadcast(data) {
-  const payload = `data: ${JSON.stringify(data)}\n\n`;
-  for (const res of clients) res.write(payload);
+function tokenFromReq(req) {
+  return req.cookies?.token || '';
 }
 
-function auth(req, res, next) {
+function verifyUser(req) {
+  const token = tokenFromReq(req);
+  if (!token) return null;
   try {
-    jwt.verify(req.cookies.token, JWT_SECRET);
-    next();
+    return jwt.verify(token, JWT_SECRET);
   } catch {
-    res.status(401).json({ error: 'Unauthorized' });
+    return null;
   }
 }
 
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
+function auth(req, res, next) {
+  const user = verifyUser(req);
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+  req.user = user;
+  next();
+}
 
-app.get('/api/content', (req, res) => {
-  res.json(readData());
-});
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/api/content', (req, res) => res.json(readData()));
 
-app.get('/api/stream', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.write(`data: ${JSON.stringify(readData())}\n\n`);
-  clients.add(res);
-  req.on('close', () => clients.delete(res));
+app.get('/api/me', (req, res) => {
+  const user = verifyUser(req);
+  if (!user) return res.status(401).json({ loggedIn: false });
+  res.json({ loggedIn: true, username: user.username });
 });
 
 app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  const valid = username === ADMIN_USER && password === ADMIN_PASS;
-
-  if (!valid) return res.status(401).json({ error: 'Invalid login' });
-
+  const { username, password } = req.body || {};
+  if (username !== ADMIN_USER || password !== ADMIN_PASS) {
+    return res.status(401).json({ error: 'Invalid login' });
+  }
   const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '12h' });
   res.cookie('token', token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production'
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 12 * 60 * 60 * 1000,
+    path: '/'
+  });
+  res.json({ ok: true, username });
+});
+
+app.post('/api/logout', (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/'
   });
   res.json({ ok: true });
 });
 
-app.post('/api/logout', (req, res) => {
-  res.clearCookie('token');
-  res.json({ ok: true });
-});
-
 app.post('/api/content', auth, (req, res) => {
-  const saved = writeData(req.body);
-  res.json({ ok: true, savedAt: saved.updatedAt });
+  writeData(req.body);
+  io.emit('content:update', req.body);
+  res.json({ ok: true, savedAt: new Date().toISOString() });
 });
 
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/api/weather', async (req, res) => {
+  const key = process.env.WEATHER_API_KEY;
+  const city = process.env.WEATHER_CITY || 'Amarillo,TX,US';
+  if (!key) return res.json({ available: false, city: city.split(',')[0], temp: '--', description: 'Add WEATHER_API_KEY' });
+  try {
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${key}&units=imperial`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Weather request failed');
+    const json = await response.json();
+    res.json({
+      available: true,
+      city: json.name,
+      temp: Math.round(json.main.temp),
+      description: json.weather?.[0]?.description || 'Current weather'
+    });
+  } catch (err) {
+    res.json({ available: false, city: city.split(',')[0], temp: '--', description: 'Weather unavailable' });
+  }
 });
 
-app.listen(PORT, () => console.log(`Cinergy Spotlight V2 running on :${PORT}`));
+io.on('connection', socket => {
+  socket.emit('content:update', readData());
+});
+
+app.use((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+server.listen(PORT, () => console.log(`Cinergy Spotlight V2 running on :${PORT}`));

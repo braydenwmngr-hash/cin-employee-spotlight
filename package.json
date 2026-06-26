@@ -1,1 +1,0 @@
-{"scripts":{"start":"node server.js","dev":"nodemon server.js"},"dependencies":{"bcryptjs":"latest","cookie-parser":"latest","dotenv":"latest","express":"latest","express-rate-limit":"latest","jsonwebtoken":"latest"},"devDependencies":{"nodemon":"latest"},"engines":{"node":">=18"}}

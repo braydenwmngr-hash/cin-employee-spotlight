@@ -1,166 +1,176 @@
 require('dotenv').config();
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 const http = require('http');
+const path = require('path');
+const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const multer = require('multer');
 const { Server } = require('socket.io');
+const { v4: uuid } = require('uuid');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, { cors: { origin: true, credentials: true } });
 
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret-now';
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'changeme';
-const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
+const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(__dirname, 'data'));
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
+const DB_FILE = path.join(DATA_DIR, 'content.json');
 
-const starterData = {
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const defaultContent = {
   settings: {
-    brandTitle: 'Cinergy Team Spotlight',
-    location: 'Amarillo',
+    locationName: 'Cinergy Amarillo',
+    boardTitle: 'Team Spotlight',
     theme: 'cinergy',
     tvMode: true,
-    rotateSections: true,
     rotationSeconds: 12,
-    backgroundType: 'gradient',
     backgroundVideo: '',
     backgroundImage: '',
-    lastUpdatedBy: 'Management',
-    lastUpdatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString()
   },
   ticker: [
-    { level: 'info', text: 'Welcome to the team board — stay informed, stay guest-first, stay MAGICAL.' },
-    { level: 'important', text: 'Check LTO talking points before each shift.' },
-    { level: 'urgent', text: 'Safety first: report spills, loose cords, and guest hazards immediately.' }
+    { id: uuid(), priority: 'info', text: 'Guest First energy all shift: smile, recover, communicate, and own the moment.', active: true },
+    { id: uuid(), priority: 'important', text: 'Check LTO details before clocking in so every guest gets the same message.', active: true }
   ],
-  employee: {
+  spotlight: {
     name: 'Employee Name',
-    role: 'Games & Attractions',
     title: 'Employee of the Month',
+    department: 'Games & Attractions',
     photo: '',
     quote: 'Guest First. Accountable. A Leader.',
-    managerNote: 'This team member consistently brings positive energy, supports the team, and creates excellent guest moments.',
-    achievements: [
-      'Created memorable guest interactions',
-      'Helped train new team members',
-      'Kept the floor moving during busy weekends',
-      'Modeled MAGICAL values every shift'
-    ]
+    managerNote: 'Recognized for consistency, positive energy, and making the floor better every shift.',
+    achievements: ['Crushed guest service moments', 'Helped train new team members', 'Kept the floor moving during busy weekends']
   },
-  shiftFocus: {
-    title: 'Today\'s Shift Focus',
-    body: 'Fast recovery, clean areas, clear communication, and guest-first service.',
-    bullets: ['Greet every guest', 'Recover high-traffic areas hourly', 'Communicate issues fast']
-  },
-  promotions: [
-    { icon: '🍿', title: 'Featured LTO', subtitle: 'Limited Time Offer', body: 'Add the active LTO, team talking points, and upsell reminder here.', active: true },
-    { icon: '🥤', title: 'Combo Push', subtitle: 'Food & Beverage', body: 'Highlight the offer the team should recommend this week.', active: true },
-    { icon: '🎮', title: 'Arcade Promo', subtitle: 'Games', body: 'Post card deals, attraction promos, or redemption updates.', active: true }
+  promos: [
+    { id: uuid(), label: 'LTO', title: 'Featured Limited-Time Offer', body: 'Add the current LTO, dates, upsell script, and what team members need to know.', image: '', active: true },
+    { id: uuid(), label: 'Promo', title: 'Weekend Push', body: 'Highlight the offer or attraction the team should focus on this weekend.', image: '', active: true }
   ],
   whatsNew: [
-    { tag: 'Menu', title: 'New Menu Item', body: 'Add ingredients, launch date, and guest talking points.', active: true },
-    { tag: 'Attractions', title: 'Updated Procedure', body: 'Add the new way of doing things in 2–3 simple steps.', active: true },
-    { tag: 'Prizes', title: 'New Prize Drop', body: 'Add prize location, value tier, and merchandising notes.', active: true }
-  ],
-  events: [
-    { date: 'This Week', title: 'Team Huddle', time: 'Before peak shifts', location: 'Back office', active: true },
-    { date: 'Friday', title: 'LTO Launch Check', time: '4:00 PM', location: 'Concessions', active: true }
+    { id: uuid(), type: 'New Item', title: 'New Menu / Prize Item', body: 'Add launch details, talking points, and where to find it.', active: true },
+    { id: uuid(), type: 'Process', title: 'Updated Procedure', body: 'Explain the new way of doing things in 2–3 clear steps.', active: true }
   ],
   recognition: [
-    { type: 'Manager Shout-Out', name: 'Team Member', text: 'Great job jumping in during the rush and keeping the guest experience smooth.', active: true },
-    { type: 'Guest Compliment', name: 'Guest Feedback', text: 'The team made our visit easy, fun, and memorable.', active: true }
+    { id: uuid(), from: 'Manager Team', name: 'Team Member', body: 'Thanks for jumping in, recovering fast, and helping guests with positive energy.', active: true },
+    { id: uuid(), from: 'Guest Compliment', name: 'Frontline Team', body: 'The team made our visit easy, fun, and memorable.', active: true }
   ],
-  safety: {
-    title: 'Safety Corner',
-    body: 'Walk your area. Remove trip hazards. Report spills immediately. Use proper lifting technique.',
-    active: true
-  },
+  events: [
+    { id: uuid(), date: 'This Week', time: 'All Day', title: 'Shift Focus', location: 'All Departments', active: true },
+    { id: uuid(), date: 'Friday', time: '5:00 PM', title: 'Weekend Readiness Check', location: 'Games Floor', active: true }
+  ],
+  safety: { title: 'Safety Corner', body: 'Keep walkways clear, communicate spills immediately, and use proper lifting form.', active: true },
   kpis: [
-    { label: 'Guest Focus', value: '96%', note: 'Goal: excellent service', active: true },
-    { label: 'Game Uptime', value: '99%', note: 'Keep issues reported', active: true },
-    { label: 'Recovery', value: 'Hourly', note: 'High-traffic zones', active: true },
-    { label: 'Sales Focus', value: 'LTO', note: 'Recommend every time', active: true }
+    { id: uuid(), label: 'Guest Energy', value: 'A+', note: 'Every interaction matters', active: true },
+    { id: uuid(), label: 'Recovery', value: 'Hourly', note: 'Reset before rushes', active: true },
+    { id: uuid(), label: 'Communication', value: 'Fast', note: 'Radio early', active: true }
   ],
-  values: [
-    { key: 'M', word: 'Motivated', meaning: 'Bring energy and ownership to every shift.' },
-    { key: 'A', word: 'Accountable', meaning: 'Own the task, the standard, and the result.' },
-    { key: 'G', word: 'Guest First', meaning: 'Make every interaction easy, helpful, and memorable.' },
-    { key: 'I', word: 'Informed', meaning: 'Know the updates before guests ask.' },
-    { key: 'C', word: 'Committed', meaning: 'Follow through and support the team.' },
-    { key: 'AL', word: 'A Leader', meaning: 'Set the example even when no one asks.' }
-  ],
-  wins: [
-    { title: 'Wins This Week', items: ['Strong weekend recovery', 'Great guest compliments', 'Smooth attraction rotations'], active: true }
+  magical: [
+    { id: uuid(), letter: 'M', word: 'Motivated', note: 'Bring energy to the shift.' },
+    { id: uuid(), letter: 'A', word: 'Accountable', note: 'Own the result.' },
+    { id: uuid(), letter: 'G', word: 'Guest First', note: 'Make it easy and memorable.' },
+    { id: uuid(), letter: 'I', word: 'Informed', note: 'Know the current info.' },
+    { id: uuid(), letter: 'C', word: 'Committed', note: 'Finish strong.' },
+    { id: uuid(), letter: 'AL', word: 'A Leader', note: 'Set the tone.' }
   ]
 };
 
-app.use(express.json({ limit: '5mb' }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/api/login', rateLimit({ windowMs: 60 * 1000, max: 8 }));
-
-function readData() {
-  if (!fs.existsSync(DATA_FILE)) writeData(starterData);
+function safeRead() {
+  if (!fs.existsSync(DB_FILE)) {
+    fs.writeFileSync(DB_FILE, JSON.stringify(defaultContent, null, 2));
+  }
   try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  } catch (err) {
-    console.error('Data file read error:', err);
-    return starterData;
+    return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+  } catch (e) {
+    const backup = `${DB_FILE}.broken-${Date.now()}`;
+    fs.copyFileSync(DB_FILE, backup);
+    fs.writeFileSync(DB_FILE, JSON.stringify(defaultContent, null, 2));
+    return defaultContent;
   }
 }
 
-function writeData(data) {
-  const merged = { ...starterData, ...data };
-  merged.settings = { ...starterData.settings, ...(data.settings || {}) };
-  fs.writeFileSync(DATA_FILE, JSON.stringify(merged, null, 2));
+function safeWrite(content) {
+  content.settings = content.settings || {};
+  content.settings.updatedAt = new Date().toISOString();
+  const temp = `${DB_FILE}.tmp`;
+  fs.writeFileSync(temp, JSON.stringify(content, null, 2));
+  fs.renameSync(temp, DB_FILE);
+  return content;
 }
 
 function auth(req, res, next) {
   try {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
-    jwt.verify(token, JWT_SECRET);
-    next();
+    const token = req.cookies.cinergy_admin;
+    req.user = jwt.verify(token, JWT_SECRET);
+    return next();
   } catch {
-    res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 }
 
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-app.get('/api/content', (req, res) => res.json(readData()));
-app.get('/api/session', auth, (req, res) => res.json({ ok: true, user: ADMIN_USER }));
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    cb(null, `${Date.now()}-${uuid()}${ext}`);
+  }
+});
+const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
+
+app.use(express.json({ limit: '5mb' }));
+app.use(cookieParser());
+app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/api/login', rateLimit({ windowMs: 60 * 1000, max: 10 }));
+
+app.get('/api/content', (req, res) => res.json(safeRead()));
+app.get('/api/session', auth, (req, res) => res.json({ ok: true, user: req.user.username }));
 
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body || {};
   if (username !== ADMIN_USER || password !== ADMIN_PASS) return res.status(401).json({ error: 'Invalid login' });
   const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '12h' });
-  res.cookie('token', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 12 * 60 * 60 * 1000 });
+  res.cookie('cinergy_admin', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 12 * 60 * 60 * 1000 });
   res.json({ ok: true });
 });
 
 app.post('/api/logout', (req, res) => {
-  res.clearCookie('token', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
+  res.clearCookie('cinergy_admin', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
   res.json({ ok: true });
 });
 
 app.post('/api/content', auth, (req, res) => {
-  const data = req.body || {};
-  data.settings = data.settings || {};
-  data.settings.lastUpdatedAt = new Date().toISOString();
-  data.settings.lastUpdatedBy = data.settings.lastUpdatedBy || 'Management';
-  writeData(data);
-  const saved = readData();
+  const saved = safeWrite(req.body);
   io.emit('content:update', saved);
-  res.json({ ok: true, savedAt: saved.settings.lastUpdatedAt });
+  res.json({ ok: true, content: saved });
+});
+
+app.post('/api/upload', auth, upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  const file = { url: `/uploads/${req.file.filename}`, name: req.file.originalname, type: req.file.mimetype, size: req.file.size };
+  io.emit('media:uploaded', file);
+  res.json({ ok: true, file });
+});
+
+app.get('/api/media', auth, (req, res) => {
+  const files = fs.readdirSync(UPLOAD_DIR).map(name => ({ name, url: `/uploads/${name}` })).sort((a,b)=>b.name.localeCompare(a.name));
+  res.json(files);
 });
 
 io.on('connection', socket => {
-  socket.emit('content:update', readData());
+  socket.emit('content:update', safeRead());
 });
 
-app.use((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-server.listen(PORT, () => console.log(`Cinergy Spotlight Pro running on :${PORT}`));
+const dist = path.join(__dirname, 'dist');
+if (fs.existsSync(dist)) app.use(express.static(dist));
+app.use((req, res) => {
+  const index = path.join(dist, 'index.html');
+  if (fs.existsSync(index)) return res.sendFile(index);
+  res.status(200).send('Run npm install && npm run build, then npm start.');
+});
+
+server.listen(PORT, () => console.log(`Cinergy Spotlight production app running on :${PORT}`));

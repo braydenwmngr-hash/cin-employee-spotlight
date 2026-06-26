@@ -1,17 +1,61 @@
-# Cinergy Team Spotlight Board
+# Cinergy Spotlight Production
 
-A dark/neon employee-of-the-month and announcements board with an admin editor.
+A production-style Employee Spotlight / internal digital signage app with:
 
-## Local setup
-1. Install Node.js 18+
-2. In this folder, run: `npm install`
-3. Copy `.env.example` to `.env` and change `ADMIN_PASS` and `JWT_SECRET`
-4. Run: `npm start`
-5. Open `http://localhost:3000`
-6. Admin: `http://localhost:3000/admin.html`
+- React TV dashboard
+- Express API server
+- Socket.IO live updates
+- CMS-style admin at `/admin`
+- JWT cookie authentication
+- Media uploads for photos, promo graphics, background images, and videos
+- Render-ready deployment
 
-## Deploy
-Deploy to Render as a Web Service. Build command: `npm install`. Start command: `npm start`.
-Set environment variables in Render: `ADMIN_USER`, `ADMIN_PASS`, `JWT_SECRET`.
+## Render settings
 
-Note: this version saves to `data.json` on the server. For permanent cloud storage across redeploys, add Render Disk or replace the JSON file with a database.
+Build Command:
+
+```bash
+npm install && npm run build
+```
+
+Start Command:
+
+```bash
+npm start
+```
+
+Environment variables:
+
+```env
+ADMIN_USER=admin
+ADMIN_PASS=your-password-here
+JWT_SECRET=make-this-a-long-random-string
+DATA_DIR=./data
+NODE_ENV=production
+```
+
+## Important for Render persistence
+
+Uploads and saved content are stored in `DATA_DIR`. On Render, add a Persistent Disk if you want content/uploads to survive redeploys.
+
+Recommended disk mount path:
+
+```txt
+/var/data
+```
+
+Then set:
+
+```env
+DATA_DIR=/var/data
+```
+
+## Login
+
+Go to:
+
+```txt
+/admin
+```
+
+Use `ADMIN_USER` and `ADMIN_PASS` from Render.

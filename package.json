@@ -1,11 +1,10 @@
 {
-  "name": "cinergy-employee-spotlight-v2",
-  "version": "2.0.0",
-  "description": "Cinergy Employee Spotlight dashboard with admin editor and live Socket.IO updates.",
+  "name": "cinergy-spotlight-pro",
+  "version": "3.0.0",
+  "description": "Cinergy Employee Spotlight and Operations Digital Signage",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=18"

@@ -4,92 +4,94 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cinergy Spotlight Admin</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="admin-body">
-  <div class="admin-shell">
-    <header class="admin-header panel">
-      <div>
-        <div class="cinergy-logo">CINERGY</div>
-        <h1>Spotlight Admin</h1>
-        <p>Update the live employee board, LTOs, shout-outs, events, and team announcements.</p>
-      </div>
-      <div class="admin-actions">
-        <button id="logoutBtn" class="ghost-btn">Log Out</button>
-        <a href="/" target="_blank" class="ghost-link">Open Board</a>
-      </div>
-    </header>
-
-    <section id="loginPanel" class="panel login-panel">
-      <h2>Admin Login</h2>
-      <p>Use the Render environment variables: ADMIN_USER and ADMIN_PASS.</p>
-      <input id="username" placeholder="Username" autocomplete="username" />
-      <input id="password" placeholder="Password" type="password" autocomplete="current-password" />
-      <button id="loginBtn" class="primary-btn">Log In</button>
-      <div id="loginMsg" class="admin-msg"></div>
-    </section>
-
-    <section id="editorPanel" class="editor-grid hidden">
-      <div class="panel form-panel full-span">
-        <h2>Board Settings</h2>
-        <label>Subtitle <input id="brandSubtitle" /></label>
-        <label>Background Video URL <input id="backgroundVideo" placeholder="Optional MP4/webm URL" /></label>
-        <label>Background Image URL <input id="backgroundImage" placeholder="Optional image URL" /></label>
-        <label>Scrolling Ticker <textarea id="ticker" rows="3"></textarea></label>
-      </div>
-
-      <div class="panel form-panel">
-        <h2>Employee Hero</h2>
-        <label>Month <input id="empMonth" /></label>
-        <label>Name <input id="empNameInput" /></label>
-        <label>Role <input id="empRole" /></label>
-        <label>Photo URL <input id="empPhotoInput" /></label>
-        <label>Quote <textarea id="empQuoteInput" rows="3"></textarea></label>
-        <label>Achievements <textarea id="achievementsInput" rows="6" placeholder="One achievement per line"></textarea></label>
-      </div>
-
-      <div class="panel form-panel">
-        <h2>MAGICAL Values</h2>
-        <label>Values <textarea id="valuesInput" rows="9" placeholder="One value per line"></textarea></label>
-      </div>
-
-      <div class="panel form-panel full-span">
-        <h2>🍿 LTO Promotions</h2>
-        <div id="ltosEditor" class="repeat-editor"></div>
-        <button class="ghost-btn" id="addLto">+ Add LTO</button>
-      </div>
-
-      <div class="panel form-panel full-span">
-        <h2>🆕 What's New</h2>
-        <div id="whatsNewEditor" class="repeat-editor"></div>
-        <button class="ghost-btn" id="addNew">+ Add What's New</button>
-      </div>
-
-      <div class="panel form-panel full-span">
-        <h2>🎂 Birthdays + Anniversaries</h2>
-        <div id="birthdaysEditor" class="repeat-editor"></div>
-        <button class="ghost-btn" id="addBirthday">+ Add Birthday/Anniversary</button>
-      </div>
-
-      <div class="panel form-panel full-span">
-        <h2>📅 Events</h2>
-        <div id="eventsEditor" class="repeat-editor"></div>
-        <button class="ghost-btn" id="addEvent">+ Add Event</button>
-      </div>
-
-      <div class="panel form-panel full-span">
-        <h2>⭐ Shout-Outs + Guest Compliments</h2>
-        <div id="shoutoutsEditor" class="repeat-editor"></div>
-        <button class="ghost-btn" id="addShoutout">+ Add Shout-Out</button>
-      </div>
-
-      <div class="save-bar">
-        <button id="saveBtn" class="primary-btn">Save & Push Live</button>
-        <span id="saveMsg"></span>
-      </div>
-    </section>
+<body class="admin-page">
+  <div id="loginView" class="login-card hidden">
+    <h1>Admin Login</h1>
+    <p>Log in to update the live team board.</p>
+    <form id="loginForm">
+      <div class="field"><label>Username</label><input id="username" autocomplete="username" required /></div>
+      <div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password" required /></div>
+      <button class="save-btn" type="submit">Log In</button>
+      <div id="loginStatus" class="status"></div>
+    </form>
   </div>
 
-  <script src="/admin.js"></script>
+  <div id="adminView" class="admin-shell hidden">
+    <aside class="side">
+      <h1>Cinergy CMS</h1>
+      <p>Edit once. Push instantly to every display.</p>
+      <button class="nav-btn active" data-tab="spotlight">Spotlight</button>
+      <button class="nav-btn" data-tab="feed">Ticker + Focus</button>
+      <button class="nav-btn" data-tab="promos">Promotions</button>
+      <button class="nav-btn" data-tab="new">What's New</button>
+      <button class="nav-btn" data-tab="recognition">Recognition</button>
+      <button class="nav-btn" data-tab="events">Events + Safety</button>
+      <button class="nav-btn" data-tab="metrics">KPIs + Values</button>
+      <button class="nav-btn" data-tab="settings">Settings</button>
+      <button id="saveBtn" class="save-btn">Save & Push Live</button>
+      <button id="logoutBtn" class="logout-btn">Log Out</button>
+      <div id="saveStatus" class="status"></div>
+    </aside>
+
+    <main class="admin-main">
+      <section class="editor-section active" data-section="spotlight">
+        <div class="editor-card"><h2>Employee Spotlight Hero</h2>
+          <div class="two-col">
+            <div class="field"><label>Title</label><input data-path="employee.title"></div>
+            <div class="field"><label>Name</label><input data-path="employee.name"></div>
+            <div class="field"><label>Role / Department</label><input data-path="employee.role"></div>
+            <div class="field"><label>Photo URL</label><input data-path="employee.photo" placeholder="Paste image URL"></div>
+          </div>
+          <div class="field"><label>Quote</label><textarea data-path="employee.quote"></textarea></div>
+          <div class="field"><label>Manager Recognition Paragraph</label><textarea data-path="employee.managerNote"></textarea></div>
+          <div class="field"><label>Achievements — one per line</label><textarea data-list="employee.achievements"></textarea></div>
+        </div>
+      </section>
+
+      <section class="editor-section" data-section="feed">
+        <div class="editor-card"><h2>Scrolling Announcement Ticker</h2><div id="tickerEditor"></div><button class="ghost-btn" data-add="ticker">Add Ticker Item</button></div>
+        <div class="editor-card"><h2>Shift Focus</h2>
+          <div class="field"><label>Title</label><input data-path="shiftFocus.title"></div>
+          <div class="field"><label>Body</label><textarea data-path="shiftFocus.body"></textarea></div>
+          <div class="field"><label>Bullet Pills — one per line</label><textarea data-list="shiftFocus.bullets"></textarea></div>
+        </div>
+      </section>
+
+      <section class="editor-section" data-section="promos"><div class="editor-card"><h2>LTO Promotions</h2><div id="promotionsEditor"></div><button class="ghost-btn" data-add="promotions">Add Promotion</button></div></section>
+      <section class="editor-section" data-section="new"><div class="editor-card"><h2>What's New</h2><div id="whatsNewEditor"></div><button class="ghost-btn" data-add="whatsNew">Add What's New Card</button></div></section>
+      <section class="editor-section" data-section="recognition"><div class="editor-card"><h2>Manager Shout-Outs + Guest Compliments</h2><div id="recognitionEditor"></div><button class="ghost-btn" data-add="recognition">Add Recognition</button></div></section>
+      <section class="editor-section" data-section="events">
+        <div class="editor-card"><h2>Upcoming Events</h2><div id="eventsEditor"></div><button class="ghost-btn" data-add="events">Add Event</button></div>
+        <div class="editor-card"><h2>Safety Corner</h2>
+          <div class="field"><label>Active</label><select data-path="safety.active"><option value="true">Show</option><option value="false">Hide</option></select></div>
+          <div class="field"><label>Title</label><input data-path="safety.title"></div>
+          <div class="field"><label>Body</label><textarea data-path="safety.body"></textarea></div>
+        </div>
+      </section>
+      <section class="editor-section" data-section="metrics">
+        <div class="editor-card"><h2>KPI Snapshot</h2><div id="kpisEditor"></div><button class="ghost-btn" data-add="kpis">Add KPI</button></div>
+        <div class="editor-card"><h2>MAGICAL Values</h2><div id="valuesEditor"></div><button class="ghost-btn" data-add="values">Add Value</button></div>
+        <div class="editor-card"><h2>Wins This Week</h2><div id="winsEditor"></div><button class="ghost-btn" data-add="wins">Add Wins List</button></div>
+      </section>
+      <section class="editor-section" data-section="settings">
+        <div class="editor-card"><h2>Display Settings</h2>
+          <div class="two-col">
+            <div class="field"><label>Board Title</label><input data-path="settings.brandTitle"></div>
+            <div class="field"><label>Location</label><input data-path="settings.location"></div>
+            <div class="field"><label>Updated By</label><input data-path="settings.lastUpdatedBy"></div>
+            <div class="field"><label>TV Mode</label><select data-path="settings.tvMode"><option value="true">On — hide admin button</option><option value="false">Off — show admin button</option></select></div>
+            <div class="field"><label>Rotate Sections</label><select data-path="settings.rotateSections"><option value="true">On</option><option value="false">Off</option></select></div>
+            <div class="field"><label>Rotation Seconds</label><input data-path="settings.rotationSeconds" type="number" min="6"></div>
+            <div class="field"><label>Background Type</label><select data-path="settings.backgroundType"><option value="gradient">Gradient</option><option value="image">Image</option><option value="video">Video</option></select></div>
+            <div class="field"><label>Background Image URL</label><input data-path="settings.backgroundImage"></div>
+            <div class="field"><label>Background Video URL</label><input data-path="settings.backgroundVideo"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="admin.js"></script>
 </body>
 </html>

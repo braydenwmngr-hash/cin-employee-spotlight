@@ -3,86 +3,89 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cinergy Employee Spotlight</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <title>Cinergy Team Spotlight</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="board-body">
-  <div class="ambient-orb orb-a"></div>
-  <div class="ambient-orb orb-b"></div>
-
-  <video id="bgVideo" class="bg-video" autoplay muted loop playsinline></video>
+<body class="display-page">
+  <video id="bgVideo" class="bg-video" muted autoplay loop playsinline></video>
   <div id="bgImage" class="bg-image"></div>
-  <div class="bg-overlay"></div>
-
-  <header class="topbar">
-    <div class="brand-lockup">
-      <div class="cinergy-logo">CINERGY</div>
-      <div>
-        <div class="system-title">SPOTLIGHT</div>
-        <div id="subtitle" class="system-subtitle">Employee Spotlight + Team Command Center</div>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">C</div>
+        <div>
+          <h1 id="brandTitle">Cinergy Team Spotlight</h1>
+          <p id="locationLine">Internal Operations Board</p>
+        </div>
       </div>
-    </div>
-    <div class="top-right">
-      <div id="weather" class="pill">Weather --</div>
-      <div id="clock" class="clock">--:--</div>
-    </div>
-  </header>
-
-  <section class="ticker-wrap">
-    <div class="ticker-label">LIVE UPDATES</div>
-    <div class="ticker-track"><span id="tickerText">Loading team updates...</span></div>
-  </section>
-
-  <main class="dashboard">
-    <section class="hero-card panel glow-card">
-      <div class="hero-copy">
-        <div class="eyebrow">🏆 Employee of the Month</div>
-        <h1 id="empName">Employee Name</h1>
-        <div id="empMeta" class="emp-meta">July 2026 · Games & Attractions</div>
-        <blockquote id="empQuote">Guest First. Accountable. A Leader.</blockquote>
-        <div class="achievement-title">Achievements</div>
-        <ul id="achievements" class="achievement-list"></ul>
+      <div class="clock-card">
+        <span id="clock">--:--</span>
+        <small id="dateLine">Loading</small>
       </div>
-      <div class="photo-stage">
-        <div class="photo-ring"></div>
-        <div id="empPhoto" class="employee-photo"><span>Add Photo</span></div>
-      </div>
+      <a class="admin-link" href="/admin">Admin</a>
+    </header>
+
+    <section class="ticker-wrap">
+      <div class="ticker-label">LIVE TEAM FEED</div>
+      <div class="ticker"><div id="tickerTrack" class="ticker-track"></div></div>
     </section>
 
-    <section class="side-stack">
-      <div class="panel section-panel">
-        <div class="section-heading">⭐ Manager Shout-Outs</div>
-        <div id="shoutouts" class="shoutout-list"></div>
-      </div>
-      <div class="panel section-panel values-panel">
-        <div class="section-heading">MAGICAL Values</div>
-        <div id="values" class="values-grid"></div>
-      </div>
-    </section>
+    <main class="dashboard-grid">
+      <section class="hero-card glow-card">
+        <div class="hero-photo-wrap"><img id="empPhoto" alt="Employee spotlight" /></div>
+        <div class="hero-content">
+          <div class="eyebrow" id="empTitle">Employee of the Month</div>
+          <h2 id="empName">Employee Name</h2>
+          <p class="role" id="empRole">Games & Attractions</p>
+          <blockquote id="empQuote">Guest First. Accountable. A Leader.</blockquote>
+          <p class="manager-note" id="managerNote"></p>
+          <div id="achievements" class="achievement-list"></div>
+        </div>
+      </section>
 
-    <section class="panel wide-section">
-      <div class="section-heading">🍿 LTO Promotions</div>
-      <div id="ltos" class="promo-grid"></div>
-    </section>
+      <section class="right-stack">
+        <div class="focus-card glow-card">
+          <div class="section-head"><span>🎯</span><h3 id="focusTitle">Today's Shift Focus</h3></div>
+          <p id="focusBody"></p>
+          <div id="focusBullets" class="pill-row"></div>
+        </div>
+        <div class="value-card glow-card">
+          <div class="section-head"><span>🏅</span><h3>MAGICAL Value</h3></div>
+          <div id="valueFeature" class="value-feature"></div>
+        </div>
+      </section>
 
-    <section class="panel wide-section">
-      <div class="section-heading">🆕 What's New</div>
-      <div id="whatsNew" class="new-grid"></div>
-    </section>
+      <section class="panel promotions-panel glow-card rotating-panel" data-panel="promotions">
+        <div class="section-head"><span>🍿</span><h3>LTO Promotions</h3></div>
+        <div id="promotions" class="card-grid"></div>
+      </section>
 
-    <section class="panel section-panel">
-      <div class="section-heading">🎂 Birthdays + Anniversaries</div>
-      <div id="birthdays" class="mini-list"></div>
-    </section>
+      <section class="panel news-panel glow-card rotating-panel" data-panel="news">
+        <div class="section-head"><span>🆕</span><h3>What's New</h3></div>
+        <div id="whatsNew" class="list-stack"></div>
+      </section>
 
-    <section class="panel section-panel">
-      <div class="section-heading">📅 Upcoming Events</div>
-      <div id="events" class="mini-list"></div>
-    </section>
-  </main>
+      <section class="panel recognition-panel glow-card rotating-panel" data-panel="recognition">
+        <div class="section-head"><span>⭐</span><h3>Recognition Wall</h3></div>
+        <div id="recognition" class="quote-stack"></div>
+      </section>
 
-  <div id="liveToast" class="live-toast">Live update received</div>
+      <section class="panel events-panel glow-card rotating-panel" data-panel="events">
+        <div class="section-head"><span>📅</span><h3>Upcoming Events</h3></div>
+        <div id="events" class="event-stack"></div>
+      </section>
+    </main>
+
+    <footer class="bottom-strip">
+      <div id="kpis" class="kpi-row"></div>
+      <div id="safety" class="safety-corner"></div>
+      <div id="lastUpdated" class="last-updated">Updated by management</div>
+    </footer>
+  </div>
+  <div id="toast" class="toast">Updating live board...</div>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

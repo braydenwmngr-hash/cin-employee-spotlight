@@ -1,0 +1,19 @@
+{
+  "name": "cinergy-employee-spotlight-v2",
+  "version": "2.0.0",
+  "description": "Cinergy employee spotlight and announcements dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

@@ -64,6 +64,9 @@ const defaultContent = {
     { id: uuid(), date: 'This Week', time: 'All Day', title: 'Shift Focus', location: 'All Departments', active: true },
     { id: uuid(), date: 'Friday', time: '5:00 PM', title: 'Weekend Readiness Check', location: 'Games Floor', active: true }
   ],
+  resources: [
+    { id: uuid(), type: 'PDF', title: 'Team Resource', body: 'Upload PDFs like checklists, LTO flyers, safety notes, or updated procedures.', file: '', active: true }
+  ],
   safety: { title: 'Safety Corner', body: 'Keep walkways clear, communicate spills immediately, and use proper lifting form.', active: true },
   kpis: [
     { id: uuid(), label: 'Guest Energy', value: 'A+', note: 'Every interaction matters', active: true },
@@ -120,7 +123,25 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${uuid()}${ext}`);
   }
 });
-const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
+const allowedMimeTypes = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'application/pdf'
+]);
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 75 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (allowedMimeTypes.has(file.mimetype)) return cb(null, true);
+    cb(new Error('Unsupported file type. Upload images, videos, or PDFs only.'));
+  }
+});
 
 app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
@@ -151,9 +172,14 @@ app.post('/api/content', auth, (req, res) => {
 
 app.post('/api/upload', auth, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const file = { url: `/uploads/${req.file.filename}`, name: req.file.originalname, type: req.file.mimetype, size: req.file.size };
+  const file = { url: `/uploads/${req.file.filename}`, name: req.file.originalname, type: req.file.mimetype, size: req.file.size, isPdf: req.file.mimetype === 'application/pdf' };
   io.emit('media:uploaded', file);
   res.json({ ok: true, file });
+});
+
+app.use((err, req, res, next) => {
+  if (err) return res.status(400).json({ error: err.message || 'Upload failed' });
+  next();
 });
 
 app.get('/api/media', auth, (req, res) => {

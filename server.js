@@ -3,17 +3,15 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret';
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS_HASH =
-  process.env.ADMIN_PASS_HASH ||
-  bcrypt.hashSync(process.env.ADMIN_PASS || 'changeme', 10);
+const ADMIN_PASS = process.env.ADMIN_PASS || 'changeme';
 
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
 
@@ -95,16 +93,18 @@ function auth(req, res, next) {
   }
 }
 
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 app.get('/api/content', (req, res) => {
   res.json(readData());
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
 
-  const valid =
-    username === ADMIN_USER &&
-    (await bcrypt.compare(password || '', ADMIN_PASS_HASH));
+  const valid = username === ADMIN_USER && password === ADMIN_PASS;
 
   if (!valid) {
     return res.status(401).json({ error: 'Invalid login' });
@@ -131,7 +131,6 @@ app.post('/api/content', auth, (req, res) => {
   res.json({ ok: true, savedAt: new Date().toISOString() });
 });
 
-// Express 5-safe fallback route
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

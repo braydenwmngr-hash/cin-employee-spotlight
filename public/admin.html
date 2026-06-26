@@ -1,93 +1,95 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cinergy Spotlight Admin</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 <body class="admin-body">
-  <section id="loginBox" class="login-box admin-card">
-    <div class="cinergy-logo">CINERGY</div>
-    <h2>Admin Login</h2>
-    <p class="subline">Use the Render environment variables ADMIN_USER and ADMIN_PASS.</p>
-    <label>Username<input id="loginUser" autocomplete="username" value="admin"></label><br>
-    <label>Password<input id="loginPass" type="password" autocomplete="current-password"></label><br>
-    <button id="loginBtn">Log In</button>
-    <p id="loginStatus" class="status"></p>
-  </section>
-
-  <main id="adminApp" class="admin-shell hidden">
-    <header class="admin-header">
+  <div class="admin-shell">
+    <header class="admin-header panel">
       <div>
         <div class="cinergy-logo">CINERGY</div>
-        <h1>Spotlight Control Room</h1>
+        <h1>Spotlight Admin</h1>
+        <p>Update the live employee board, LTOs, shout-outs, events, and team announcements.</p>
       </div>
-      <div class="row-actions"><a href="/" target="_blank"><button class="secondary">Open Display</button></a><button id="logoutBtn" class="secondary">Log Out</button></div>
+      <div class="admin-actions">
+        <button id="logoutBtn" class="ghost-btn">Log Out</button>
+        <a href="/" target="_blank" class="ghost-link">Open Board</a>
+      </div>
     </header>
 
-    <section class="admin-card">
-      <h2>Brand Bar</h2>
-      <div class="admin-grid">
-        <label>Dashboard Title<input id="brandTitle"></label>
-        <label>Subtitle<input id="brandSubtitle"></label>
+    <section id="loginPanel" class="panel login-panel">
+      <h2>Admin Login</h2>
+      <p>Use the Render environment variables: ADMIN_USER and ADMIN_PASS.</p>
+      <input id="username" placeholder="Username" autocomplete="username" />
+      <input id="password" placeholder="Password" type="password" autocomplete="current-password" />
+      <button id="loginBtn" class="primary-btn">Log In</button>
+      <div id="loginMsg" class="admin-msg"></div>
+    </section>
+
+    <section id="editorPanel" class="editor-grid hidden">
+      <div class="panel form-panel full-span">
+        <h2>Board Settings</h2>
+        <label>Subtitle <input id="brandSubtitle" /></label>
+        <label>Background Video URL <input id="backgroundVideo" placeholder="Optional MP4/webm URL" /></label>
+        <label>Background Image URL <input id="backgroundImage" placeholder="Optional image URL" /></label>
+        <label>Scrolling Ticker <textarea id="ticker" rows="3"></textarea></label>
+      </div>
+
+      <div class="panel form-panel">
+        <h2>Employee Hero</h2>
+        <label>Month <input id="empMonth" /></label>
+        <label>Name <input id="empNameInput" /></label>
+        <label>Role <input id="empRole" /></label>
+        <label>Photo URL <input id="empPhotoInput" /></label>
+        <label>Quote <textarea id="empQuoteInput" rows="3"></textarea></label>
+        <label>Achievements <textarea id="achievementsInput" rows="6" placeholder="One achievement per line"></textarea></label>
+      </div>
+
+      <div class="panel form-panel">
+        <h2>MAGICAL Values</h2>
+        <label>Values <textarea id="valuesInput" rows="9" placeholder="One value per line"></textarea></label>
+      </div>
+
+      <div class="panel form-panel full-span">
+        <h2>🍿 LTO Promotions</h2>
+        <div id="ltosEditor" class="repeat-editor"></div>
+        <button class="ghost-btn" id="addLto">+ Add LTO</button>
+      </div>
+
+      <div class="panel form-panel full-span">
+        <h2>🆕 What's New</h2>
+        <div id="whatsNewEditor" class="repeat-editor"></div>
+        <button class="ghost-btn" id="addNew">+ Add What's New</button>
+      </div>
+
+      <div class="panel form-panel full-span">
+        <h2>🎂 Birthdays + Anniversaries</h2>
+        <div id="birthdaysEditor" class="repeat-editor"></div>
+        <button class="ghost-btn" id="addBirthday">+ Add Birthday/Anniversary</button>
+      </div>
+
+      <div class="panel form-panel full-span">
+        <h2>📅 Events</h2>
+        <div id="eventsEditor" class="repeat-editor"></div>
+        <button class="ghost-btn" id="addEvent">+ Add Event</button>
+      </div>
+
+      <div class="panel form-panel full-span">
+        <h2>⭐ Shout-Outs + Guest Compliments</h2>
+        <div id="shoutoutsEditor" class="repeat-editor"></div>
+        <button class="ghost-btn" id="addShoutout">+ Add Shout-Out</button>
+      </div>
+
+      <div class="save-bar">
+        <button id="saveBtn" class="primary-btn">Save & Push Live</button>
+        <span id="saveMsg"></span>
       </div>
     </section>
+  </div>
 
-    <section class="admin-card">
-      <h2>Employee Spotlight</h2>
-      <div class="admin-grid three">
-        <label>Month<input id="empMonth"></label>
-        <label>Name<input id="empName"></label>
-        <label>Role<input id="empRole"></label>
-        <label>Department<input id="empDepartment"></label>
-        <label class="full">Photo URL or Base64<input id="empPhoto" placeholder="Paste image URL or use the uploader below"></label>
-        <label class="full">Upload Photo<input id="photoUpload" type="file" accept="image/*"></label>
-        <label class="full">Quote<textarea id="empQuote"></textarea></label>
-        <label class="full">Highlights — one per line<textarea id="empHighlights"></textarea></label>
-      </div>
-      <h3>Stats</h3>
-      <div id="statsEditor"></div>
-      <button id="addStat" class="secondary">+ Add Stat</button>
-    </section>
-
-    <section class="admin-card">
-      <h2>Announcements</h2>
-      <div id="announcementsEditor"></div>
-      <button id="addAnnouncement" class="secondary">+ Add Announcement</button>
-    </section>
-
-    <section class="admin-card">
-      <h2>Manager Shout-Outs</h2>
-      <div id="shoutoutsEditor"></div>
-      <button id="addShoutout" class="secondary">+ Add Shout-Out</button>
-    </section>
-
-    <section class="admin-card">
-      <h2>Upcoming Events</h2>
-      <div id="eventsEditor"></div>
-      <button id="addEvent" class="secondary">+ Add Event</button>
-    </section>
-
-    <section class="admin-card">
-      <h2>Team Wire Ticker</h2>
-      <label>Messages — one per line<textarea id="tickerMessages"></textarea></label>
-    </section>
-
-    <section class="admin-card">
-      <h2>MAGICAL Values</h2>
-      <div id="valuesEditor"></div>
-    </section>
-
-    <div class="savebar">
-      <span id="saveStatus" class="status">Ready</span>
-      <button id="saveBtn">Save & Push Live</button>
-    </div>
-  </main>
-
-  <script src="admin.js"></script>
+  <script src="/admin.js"></script>
 </body>
 </html>

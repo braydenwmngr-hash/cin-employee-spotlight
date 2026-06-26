@@ -1,78 +1,112 @@
-const $ = (id) => document.getElementById(id);
-let currentData = null;
+const $ = id => document.getElementById(id);
+const socket = io();
+let firstLoad = true;
 
-function escapeHtml(value = '') {
-  return String(value).replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[c]));
-}
+function safeList(items) { return Array.isArray(items) ? items : []; }
+function text(value, fallback = '') { return value || fallback; }
 
 function setClock() {
   const now = new Date();
-  $('dateNow').textContent = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-  $('timeNow').textContent = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  $('clock').textContent = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
 }
-setInterval(setClock, 1000); setClock();
+setInterval(setClock, 1000);
+setClock();
+
+async function loadWeather() {
+  try {
+    const res = await fetch('/api/weather');
+    const w = await res.json();
+    $('weather').textContent = `${w.city || 'Weather'} · ${w.temp}${w.temp === '--' ? '' : '°'} · ${w.description || ''}`;
+  } catch {
+    $('weather').textContent = 'Weather unavailable';
+  }
+}
+loadWeather();
+setInterval(loadWeather, 10 * 60 * 1000);
 
 function render(data) {
-  currentData = data;
-  const emp = data.employee || {};
-  $('dashboardTitle').textContent = data.brand?.dashboardTitle || 'Employee Spotlight';
-  $('subtitle').textContent = data.brand?.subtitle || '';
-  $('employeeName').textContent = emp.name || 'Employee Name';
-  $('employeeRole').textContent = emp.role || 'Games & Attractions';
-  $('employeeMonth').textContent = emp.month || '';
-  $('employeeQuote').textContent = emp.quote || '';
+  $('subtitle').textContent = data.brand?.subtitle || 'Employee Spotlight + Team Command Center';
 
-  const photo = $('employeePhoto');
+  const video = $('bgVideo');
+  const bgImage = $('bgImage');
+  if (data.brand?.backgroundVideo) {
+    if (video.src !== data.brand.backgroundVideo) video.src = data.brand.backgroundVideo;
+    video.style.display = 'block';
+  } else {
+    video.style.display = 'none';
+  }
+  if (data.brand?.backgroundImage) {
+    bgImage.style.backgroundImage = `url('${data.brand.backgroundImage}')`;
+  } else {
+    bgImage.style.backgroundImage = '';
+  }
+
+  const ticker = safeList(data.ticker).join('   •   ');
+  $('tickerText').textContent = ticker || 'Add ticker updates in admin.';
+
+  const emp = data.employee || {};
+  $('empName').textContent = text(emp.name, 'Employee Name');
+  $('empMeta').textContent = `${text(emp.month, 'This Month')} · ${text(emp.role, 'Team Member')}`;
+  $('empQuote').textContent = text(emp.quote, 'Guest First. Accountable. A Leader.');
+  $('achievements').innerHTML = safeList(emp.achievements).map(x => `<li>${escapeHtml(x)}</li>`).join('');
+  const photo = $('empPhoto');
   if (emp.photo) {
-    photo.className = 'portrait-photo';
     photo.style.backgroundImage = `url('${emp.photo}')`;
     photo.innerHTML = '';
   } else {
-    photo.className = 'portrait-placeholder';
     photo.style.backgroundImage = '';
-    photo.innerHTML = '<span>TEAM<br>SPOTLIGHT</span>';
+    photo.innerHTML = '<span>Add Photo</span>';
   }
 
-  $('employeeStats').innerHTML = (emp.stats || []).map(s => `
-    <div class="stat-pill"><strong>${escapeHtml(s.value)}</strong><span>${escapeHtml(s.label)}</span></div>
-  `).join('');
-
-  $('highlightsList').innerHTML = (emp.highlights || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
-
-  $('announcementGrid').innerHTML = (data.announcements || []).filter(a => a.active !== false).map(a => `
-    <article class="announcement-card priority-${escapeHtml(a.priority || 'medium')}">
-      <div class="tag-row"><span>${escapeHtml(a.type || a.tag || 'Update')}</span><em>${escapeHtml(a.priority || 'medium')}</em></div>
-      <h3>${escapeHtml(a.title)}</h3>
-      <p>${escapeHtml(a.body)}</p>
+  $('ltos').innerHTML = safeList(data.ltos).filter(x => x.active !== false).map(item => `
+    <article class="promo-card">
+      <span class="tag">${escapeHtml(item.label || 'LTO')}</span>
+      <h3>${escapeHtml(item.title || '')}</h3>
+      <p>${escapeHtml(item.detail || '')}</p>
+      ${item.image ? `<div class="promo-img" style="background-image:url('${item.image}')"></div>` : ''}
     </article>
   `).join('');
 
-  $('valuesGrid').innerHTML = (data.values || []).map(v => `
-    <div class="value-card"><b>${escapeHtml(v.letter || '')}</b><strong>${escapeHtml(v.word || v)}</strong><span>${escapeHtml(v.note || '')}</span></div>
+  $('whatsNew').innerHTML = safeList(data.whatsNew).map(item => `
+    <article class="new-card">
+      <div class="type">${escapeHtml(item.type || 'Update')}</div>
+      <h3>${escapeHtml(item.title || '')}</h3>
+      <p>${escapeHtml(item.body || '')}</p>
+    </article>
   `).join('');
 
-  $('shoutoutsList').innerHTML = (data.shoutouts || []).map(s => `
-    <div class="shout"><strong>${escapeHtml(s.name)}</strong><p>${escapeHtml(s.text)}</p></div>
+  $('birthdays').innerHTML = safeList(data.birthdays).map(item => `
+    <div class="mini-item"><small>${escapeHtml(item.type || 'Birthday')}</small><strong>${escapeHtml(item.name || '')}</strong><div>${escapeHtml(item.date || '')}</div></div>
   `).join('');
 
-  $('eventsList').innerHTML = (data.events || []).map(e => `
-    <div class="event"><span>${escapeHtml(e.date)}</span><strong>${escapeHtml(e.title)}</strong><em>${escapeHtml(e.time)}</em></div>
+  $('events').innerHTML = safeList(data.events).map(item => `
+    <div class="mini-item"><small>${escapeHtml(item.date || '')} · ${escapeHtml(item.time || '')}</small><strong>${escapeHtml(item.title || '')}</strong><div>${escapeHtml(item.location || '')}</div></div>
   `).join('');
 
-  const ticker = Array.isArray(data.ticker) ? data.ticker.join('   •   ') : data.ticker || '';
-  $('tickerText').textContent = `${ticker}   •   ${ticker}`;
+  $('shoutouts').innerHTML = safeList(data.shoutouts).map(item => `
+    <div class="shoutout"><small>${escapeHtml(item.from || 'Manager')}</small><strong>${escapeHtml(item.to || 'Team')}</strong><p>${escapeHtml(item.body || '')}</p></div>
+  `).join('');
+
+  $('values').innerHTML = safeList(data.values).map(v => `<div class="value-chip">${escapeHtml(v)}</div>`).join('');
+
+  if (!firstLoad) showToast();
+  firstLoad = false;
 }
 
-async function load() {
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c]));
+}
+
+function showToast() {
+  const toast = $('liveToast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+async function initialLoad() {
   const res = await fetch('/api/content');
   render(await res.json());
 }
 
-load();
-
-try {
-  const stream = new EventSource('/api/stream');
-  stream.onmessage = (event) => render(JSON.parse(event.data));
-} catch {
-  setInterval(load, 20000);
-}
+socket.on('content:update', render);
+initialLoad();
